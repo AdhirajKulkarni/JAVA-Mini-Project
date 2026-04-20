@@ -1,0 +1,299 @@
+import java.util.ArrayList;
+import java.util.Scanner;
+
+/**
+ * ================================================
+ *       LIBRARY BOOK MANAGEMENT SYSTEM
+ *   Demonstrates ArrayList dynamic resizing &
+ *        easy data handling in Java
+ * ================================================
+ */
+
+// ─── Book Model ───────────────────────────────────
+class Book {
+    private String title;
+    private String author;
+    private String isbn;
+    private String genre;
+    private boolean isAvailable;
+
+    public Book(String title, String author, String isbn, String genre) {
+        this.title      = title;
+        this.author     = author;
+        this.isbn       = isbn;
+        this.genre      = genre;
+        this.isAvailable = true;
+    }
+
+    // Getters
+    public String  getTitle()       { return title; }
+    public String  getAuthor()      { return author; }
+    public String  getIsbn()        { return isbn; }
+    public String  getGenre()       { return genre; }
+    public boolean isAvailable()    { return isAvailable; }
+
+    // Setters
+    public void setAvailable(boolean available) { this.isAvailable = available; }
+
+    @Override
+    public String toString() {
+        String status = isAvailable ? "✅ Available" : "❌ Issued";
+        return String.format("  Title  : %-35s | Author : %-20s | ISBN : %-14s | Genre : %-15s | Status : %s",
+                title, author, isbn, genre, status);
+    }
+}
+
+// ─── Library Manager ──────────────────────────────
+class Library {
+
+    // ArrayList automatically resizes as books are added/removed
+    private ArrayList<Book> books = new ArrayList<>();
+
+    // ── 1. Add a new book ──────────────────────────
+    public void addBook(String title, String author, String isbn, String genre) {
+        // Check for duplicate ISBN
+        for (Book b : books) {
+            if (b.getIsbn().equalsIgnoreCase(isbn)) {
+                System.out.println("\n⚠  A book with ISBN [" + isbn + "] already exists.\n");
+                return;
+            }
+        }
+        books.add(new Book(title, author, isbn, genre));
+        System.out.println("\n✅  Book \"" + title + "\" added successfully! " +
+                           "(Library size: " + books.size() + ")\n");
+    }
+
+    // ── 2. Issue a book (mark as unavailable) ───────
+    public void issueBook(String title) {
+        for (Book b : books) {
+            if (b.getTitle().equalsIgnoreCase(title)) {
+                if (!b.isAvailable()) {
+                    System.out.println("\n⚠  \"" + title + "\" is already issued.\n");
+                } else {
+                    b.setAvailable(false);
+                    System.out.println("\n📤  \"" + title + "\" has been issued successfully.\n");
+                }
+                return;
+            }
+        }
+        System.out.println("\n❌  Book \"" + title + "\" not found.\n");
+    }
+
+    // ── 3. Return a book (mark as available) ────────
+    public void returnBook(String title) {
+        for (Book b : books) {
+            if (b.getTitle().equalsIgnoreCase(title)) {
+                if (b.isAvailable()) {
+                    System.out.println("\n⚠  \"" + title + "\" was not issued.\n");
+                } else {
+                    b.setAvailable(true);
+                    System.out.println("\n📥  \"" + title + "\" returned successfully.\n");
+                }
+                return;
+            }
+        }
+        System.out.println("\n❌  Book \"" + title + "\" not found.\n");
+    }
+
+    // ── 4. Remove a book from the library ───────────
+    public void removeBook(String title) {
+        // Iterator-safe removal using removeIf
+        boolean removed = books.removeIf(b -> b.getTitle().equalsIgnoreCase(title));
+        if (removed) {
+            System.out.println("\n🗑️  Book \"" + title + "\" removed from library. " +
+                               "(Library size: " + books.size() + ")\n");
+        } else {
+            System.out.println("\n❌  Book \"" + title + "\" not found.\n");
+        }
+    }
+
+    // ── 5. Search by title (partial match) ──────────
+    public void searchByTitle(String query) {
+        System.out.println("\n🔍  Search results for \"" + query + "\":");
+        System.out.println("─".repeat(120));
+
+        ArrayList<Book> results = new ArrayList<>();
+        for (Book b : books) {
+            if (b.getTitle().toLowerCase().contains(query.toLowerCase())) {
+                results.add(b);
+            }
+        }
+
+        if (results.isEmpty()) {
+            System.out.println("  No books found matching \"" + query + "\".");
+        } else {
+            results.forEach(System.out::println);
+            System.out.println("\n  Found " + results.size() + " book(s).");
+        }
+        System.out.println("─".repeat(120) + "\n");
+    }
+
+    // ── 6. Search by author ──────────────────────────
+    public void searchByAuthor(String author) {
+        System.out.println("\n🔍  Books by author \"" + author + "\":");
+        System.out.println("─".repeat(120));
+
+        boolean found = false;
+        for (Book b : books) {
+            if (b.getAuthor().toLowerCase().contains(author.toLowerCase())) {
+                System.out.println(b);
+                found = true;
+            }
+        }
+        if (!found) System.out.println("  No books found for author \"" + author + "\".");
+        System.out.println("─".repeat(120) + "\n");
+    }
+
+    // ── 7. Display all books ─────────────────────────
+    public void displayAllBooks() {
+        System.out.println("\n📚  ALL BOOKS IN LIBRARY  (Total: " + books.size() + ")");
+        System.out.println("─".repeat(120));
+        if (books.isEmpty()) {
+            System.out.println("  The library is empty.");
+        } else {
+            books.forEach(System.out::println);
+        }
+        System.out.println("─".repeat(120) + "\n");
+    }
+
+    // ── 8. Display only available books ─────────────
+    public void displayAvailableBooks() {
+        System.out.println("\n✅  AVAILABLE BOOKS:");
+        System.out.println("─".repeat(120));
+        long count = books.stream().filter(Book::isAvailable).count();
+        if (count == 0) {
+            System.out.println("  No books currently available.");
+        } else {
+            books.stream().filter(Book::isAvailable).forEach(System.out::println);
+            System.out.println("\n  Total available: " + count);
+        }
+        System.out.println("─".repeat(120) + "\n");
+    }
+
+    // ── 9. Library statistics ────────────────────────
+    public void showStats() {
+        long total     = books.size();
+        long available = books.stream().filter(Book::isAvailable).count();
+        long issued    = total - available;
+
+        System.out.println("\n📊  LIBRARY STATISTICS");
+        System.out.println("─".repeat(40));
+        System.out.printf("  Total Books    : %d%n", total);
+        System.out.printf("  Available      : %d%n", available);
+        System.out.printf("  Issued         : %d%n", issued);
+        System.out.println("─".repeat(40) + "\n");
+    }
+
+    public int size() { return books.size(); }
+}
+
+// ─── Main Application ─────────────────────────────
+public class LibraryManagementSystem {
+
+    static Scanner sc = new Scanner(System.in);
+    static Library library = new Library();
+
+    public static void main(String[] args) {
+
+        // Pre-load some sample books
+        preloadSampleData();
+
+        System.out.println("╔══════════════════════════════════════════════╗");
+        System.out.println("║      📖 LIBRARY BOOK MANAGEMENT SYSTEM       ║");
+        System.out.println("║         Powered by Java ArrayList            ║");
+        System.out.println("╚══════════════════════════════════════════════╝");
+
+        boolean running = true;
+        while (running) {
+            printMenu();
+            System.out.print("  Enter your choice: ");
+            String input = sc.nextLine().trim();
+
+            switch (input) {
+                case "1"  -> addBookInteractive();
+                case "2"  -> issueBookInteractive();
+                case "3"  -> returnBookInteractive();
+                case "4"  -> removeBookInteractive();
+                case "5"  -> searchByTitleInteractive();
+                case "6"  -> searchByAuthorInteractive();
+                case "7"  -> library.displayAllBooks();
+                case "8"  -> library.displayAvailableBooks();
+                case "9"  -> library.showStats();
+                case "0"  -> { System.out.println("\n👋  Thank you! Goodbye.\n"); running = false; }
+                default   -> System.out.println("\n⚠  Invalid choice. Please try again.\n");
+            }
+        }
+        sc.close();
+    }
+
+    // ── Menu ──────────────────────────────────────────
+    static void printMenu() {
+        System.out.println("┌─────────────────────────────────────┐");
+        System.out.println("│             MAIN  MENU              │");
+        System.out.println("├─────────────────────────────────────┤");
+        System.out.println("│  1. ➕  Add a Book                  │");
+        System.out.println("│  2. 📤  Issue a Book                │");
+        System.out.println("│  3. 📥  Return a Book               │");
+        System.out.println("│  4. 🗑️   Remove a Book              │");
+        System.out.println("│  5. 🔍  Search by Title             │");
+        System.out.println("│  6. 🔍  Search by Author            │");
+        System.out.println("│  7. 📚  Display All Books           │");
+        System.out.println("│  8. ✅  Display Available Books     │");
+        System.out.println("│  9. 📊  Library Statistics          │");
+        System.out.println("│  0. 🚪  Exit                        │");
+        System.out.println("└─────────────────────────────────────┘");
+    }
+
+    // ── Interactive Helpers ───────────────────────────
+    static void addBookInteractive() {
+        System.out.println("\n── ADD NEW BOOK ──");
+        System.out.print("  Title  : "); String title  = sc.nextLine().trim();
+        System.out.print("  Author : "); String author = sc.nextLine().trim();
+        System.out.print("  ISBN   : "); String isbn   = sc.nextLine().trim();
+        System.out.print("  Genre  : "); String genre  = sc.nextLine().trim();
+        library.addBook(title, author, isbn, genre);
+    }
+
+    static void issueBookInteractive() {
+        System.out.println("\n── ISSUE BOOK ──");
+        System.out.print("  Enter book title to issue: ");
+        library.issueBook(sc.nextLine().trim());
+    }
+
+    static void returnBookInteractive() {
+        System.out.println("\n── RETURN BOOK ──");
+        System.out.print("  Enter book title to return: ");
+        library.returnBook(sc.nextLine().trim());
+    }
+
+    static void removeBookInteractive() {
+        System.out.println("\n── REMOVE BOOK ──");
+        System.out.print("  Enter book title to remove: ");
+        library.removeBook(sc.nextLine().trim());
+    }
+
+    static void searchByTitleInteractive() {
+        System.out.print("\n  Enter title to search: ");
+        library.searchByTitle(sc.nextLine().trim());
+    }
+
+    static void searchByAuthorInteractive() {
+        System.out.print("\n  Enter author name to search: ");
+        library.searchByAuthor(sc.nextLine().trim());
+    }
+
+    // ── Sample Data ───────────────────────────────────
+    static void preloadSampleData() {
+        library.addBook("The Great Gatsby",            "F. Scott Fitzgerald", "978-0743273565", "Classic");
+        library.addBook("To Kill a Mockingbird",       "Harper Lee",          "978-0061935466", "Fiction");
+        library.addBook("1984",                        "George Orwell",       "978-0451524935", "Dystopian");
+        library.addBook("Clean Code",                  "Robert C. Martin",    "978-0132350884", "Technology");
+        library.addBook("The Pragmatic Programmer",    "Andrew Hunt",         "978-0135957059", "Technology");
+        library.addBook("Sapiens",                     "Yuval Noah Harari",   "978-0062316097", "History");
+        library.addBook("Atomic Habits",               "James Clear",         "978-0735211292", "Self-Help");
+        library.addBook("The Alchemist",               "Paulo Coelho",        "978-0062315007", "Fiction");
+        System.out.println("─".repeat(60));
+        System.out.println("  📦  Sample data loaded — " + library.size() + " books in library.");
+        System.out.println("─".repeat(60));
+    }
+}
